@@ -40,34 +40,29 @@ int TFila_Tamanho(TFilaLutadores *pFila) {
     (MAXTAM + pFila->Tras - pFila->Frente));
 }
 
-int TFila_Enfileira(TFilaLutadores * pFila, int  forca) {
+int TFila_Enfileira(TFilaLutadores * pFila, TLutador lutador) {
     if (pFila->Frente == (pFila->Tras +1) % MAXTAM){
-    //printf("ERRO: FILA CHEIA");
+    
     return 0; 
     }
-
-    pFila->Lutador[pFila->Tras].forcaLutador = forca ; 
-    pFila->Lutador[pFila->Tras].indiceLutador = pFila->Tras;
+    pFila->Lutador[pFila->Tras] = lutador;
+    //pFila->Lutador[pFila->Tras].forcaLutador = forca ; 
+    //pFila->Lutador[pFila->Tras].indiceLutador = pFila->Tras;
     pFila->Tras = ((pFila->Tras + 1)) % MAXTAM ;
     
      return 1;
 }
 
-int TFila_Reenfileira(TFilaLutadores * pFila , int forca , int indice) {
-    pFila->Lutador[pFila->Tras].forcaLutador = forca ; 
-    pFila->Lutador[pFila->Tras].indiceLutador = indice;
-    pFila->Tras = ((pFila->Tras + 1)) % MAXTAM ;
 
-    return 1;
-}
 
-int TFila_Desenfileira(TFilaLutadores * pFila, int *forca, int *indice) {
+int TFila_Desenfileira(TFilaLutadores * pFila, TLutador *lutador) {
     if (TFila_EhVazia(pFila)){
         
     return 0;
     }
-    *forca = pFila->Lutador[pFila->Frente].forcaLutador;
-    *indice = pFila->Lutador[pFila->Frente].indiceLutador;
+  
+    *lutador = pFila->Lutador[pFila->Frente]; 
+    
     pFila->Frente = (pFila->Frente + 1) % MAXTAM;
     return 1;
 }
@@ -83,13 +78,14 @@ int main () {
 
     scanf("%d %d",&ExpoenteN,&Krecuperacao);
     if (ExpoenteN > 15) {
-        return 0; //erro
+        return 0; 
     }
 
     Ncompetidores = pow(2,ExpoenteN);
-    
+    //printf("Quantidade de competidores : %d\n", Ncompetidores);
 
     TFilaLutadores MinhaFilaDeLutadores;
+    TLutador lutador;
     
     TFila_Inicia(&MinhaFilaDeLutadores);
     
@@ -99,11 +95,16 @@ int main () {
 
     for(k=0; k < Ncompetidores; k++) {
         scanf("%d",&forcaInicialPi);
+        lutador.forcaLutador = forcaInicialPi;
+        lutador.indiceLutador = k+1;
+
+
         if (forcaInicialPi > 1000) {
             return 0;
         }
-        TFila_Enfileira(&MinhaFilaDeLutadores,forcaInicialPi);
-       
+
+        TFila_Enfileira(&MinhaFilaDeLutadores,lutador);
+        //printf("Tamanho da Fila: %d\n",TFila_Tamanho(&MinhaFilaDeLutadores));
     } 
 
 
@@ -111,40 +112,66 @@ int main () {
     int contador = 1;
     while (TFila_Tamanho(&MinhaFilaDeLutadores) > 1){   
 
-       TFila_Desenfileira(&MinhaFilaDeLutadores,&ForcaLutadorX1,&indiceX1);
-       TFila_Desenfileira(&MinhaFilaDeLutadores,&ForcaLutadorX2,&indiceX2);
-       printf("\n\nCONFRONTO NÚMERO %d\n", contador);
+       TFila_Desenfileira(&MinhaFilaDeLutadores,&lutador);
+       ForcaLutadorX1 = lutador.forcaLutador;
+       indiceX1 = lutador.indiceLutador;
+
+       
+       TFila_Desenfileira(&MinhaFilaDeLutadores,&lutador);
+       ForcaLutadorX2 = lutador.forcaLutador;
+       indiceX2 = lutador.indiceLutador;
+       //printf("Força Desenfileirada x1: %d //// Indice desenfileirado x1: %d\n",ForcaLutadorX1,indiceX1);
+       //printf("Força Desenfileirada x2: %d //// Indice desenfileirado x2: %d\n",ForcaLutadorX2,indiceX2);
        contador++; 
-       printf("Força Desenfileirada x1: %d //// Indice desenfileirado x1: %d\n",ForcaLutadorX1,indiceX1);
-       printf("Força Desenfileirada x2: %d //// Indice desenfileirado x2: %d\n",ForcaLutadorX2,indiceX2);
+       
 
         if (ForcaLutadorX1 > ForcaLutadorX2) { //lutador1 vence
             if ((ForcaLutadorX1 - ForcaLutadorX2 + Krecuperacao) <= ForcaLutadorX1){
                 ForcaLutadorX1 = (ForcaLutadorX1 - ForcaLutadorX2) + Krecuperacao;
+                lutador.indiceLutador = indiceX1;
+                lutador.forcaLutador = ForcaLutadorX1; //atualiza a forca do lutador vencedor
+            //}else{
+            //    lutador.indiceLutador = indiceX1;
+            //    lutador.forcaLutador = ForcaLutadorX1;
             }
-            TFila_Reenfileira(&MinhaFilaDeLutadores,ForcaLutadorX1,indiceX1);
-            printf("Forca ReEnfileirada: %d ///// indice Reenfileirado: %d \n",ForcaLutadorX1, indiceX1);
+            TFila_Enfileira(&MinhaFilaDeLutadores,lutador);
+            
             
         }else if(ForcaLutadorX1 < ForcaLutadorX2) { //lutador2 vence
             if ((ForcaLutadorX2-ForcaLutadorX1+Krecuperacao) <= ForcaLutadorX2){
                 ForcaLutadorX2 = ForcaLutadorX2 - ForcaLutadorX1 + Krecuperacao;
+                lutador.indiceLutador = indiceX2;
+                lutador.forcaLutador = ForcaLutadorX2;
+            //}else{
+            //    lutador.indiceLutador = indiceX2;
+            //    lutador.forcaLutador = ForcaLutadorX2;
             }
-            TFila_Reenfileira(&MinhaFilaDeLutadores,ForcaLutadorX2,indiceX2);
-            printf("Forca ReEnfileirada: %d //// indice Reenfileirado: %d\n",ForcaLutadorX2, indiceX2);
+            TFila_Enfileira(&MinhaFilaDeLutadores,lutador);
+            
         
         }else if (ForcaLutadorX1 == ForcaLutadorX2) {
             if (indiceX1 > indiceX2) { // x2 vence pois tem menor indice
                 if ((ForcaLutadorX2-ForcaLutadorX1+Krecuperacao) <= ForcaLutadorX2){
                     ForcaLutadorX2 = ForcaLutadorX2 - ForcaLutadorX1 + Krecuperacao;
+                    lutador.indiceLutador = indiceX2;
+                    lutador.forcaLutador = ForcaLutadorX2;
+                }else {
+                    lutador.indiceLutador = indiceX2;
+                    lutador.forcaLutador = ForcaLutadorX2;
                 }
-                TFila_Reenfileira(&MinhaFilaDeLutadores,ForcaLutadorX2,indiceX2);
-                printf("Forca ReEnfileirada: %d //// indice Reenfileirado: %d\n",ForcaLutadorX2, indiceX2);
+                TFila_Enfileira(&MinhaFilaDeLutadores,lutador);
+                
             }else if ( indiceX1 < indiceX2) { //x1 vence pois tem menor indice
                 if ((ForcaLutadorX1 - ForcaLutadorX2 + Krecuperacao) <= ForcaLutadorX1){
                     ForcaLutadorX1 = ForcaLutadorX1 - ForcaLutadorX2 + Krecuperacao;
+                    lutador.indiceLutador = indiceX1;
+                    lutador.forcaLutador = ForcaLutadorX1;
+                }else {
+                     lutador.indiceLutador = indiceX1;
+                    lutador.forcaLutador = ForcaLutadorX1;
                 }
-                TFila_Reenfileira(&MinhaFilaDeLutadores,ForcaLutadorX1,indiceX1);
-                printf("Forca ReEnfileirada: %d //// indice Reenfileirado: %d\n",ForcaLutadorX1, indiceX1);
+                TFila_Enfileira(&MinhaFilaDeLutadores,lutador);
+                
             }
 
         } 
@@ -154,10 +181,9 @@ int main () {
     
     
     int indiceVencedor , forcaVencedor, tam;    
-    TFila_Desenfileira(&MinhaFilaDeLutadores,&forcaVencedor, &indiceVencedor);
+    TFila_Desenfileira(&MinhaFilaDeLutadores,&lutador);
+    indiceVencedor = lutador.indiceLutador;
     
-    printf("forca vencedor : %d //// indice vencedor: %d\n",forcaVencedor, indiceVencedor);
-    printf("Tamanho final da fila: %d\n",TFila_Tamanho(&MinhaFilaDeLutadores));
     printf("%d\n",indiceVencedor);
   
     return 1;
